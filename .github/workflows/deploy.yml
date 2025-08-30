@@ -48,11 +48,11 @@ jobs:
 
           echo "Checking if container is healthy..."
           if curl -f http://localhost:80 > /dev/null 2>&1; then
-            echo "✅ New container is healthy. Updating stable tag."
+            echo " New container is healthy. Updating stable tag."
             docker tag $IMAGE $STABLE
             docker push $STABLE
           else
-            echo "❌ New container failed. Rolling back to stable."
+            echo " New container failed. Rolling back to stable."
             docker stop nextjs-app || true
             docker rm nextjs-app || true
             docker pull $STABLE
