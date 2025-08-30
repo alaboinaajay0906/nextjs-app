@@ -17,7 +17,6 @@ ENV PORT 3000
 
 COPY --from=builder /root/package*.json ./
 COPY --from=builder /root/.next ./.next
-COPY --from=builder /root/public ./public
 COPY --from=builder /root/node_modules ./node_modules
 
 EXPOSE 3000
