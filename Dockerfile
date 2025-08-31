@@ -27,15 +27,6 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/pages ./pages
 COPY --from=builder /app/next.config.js ./next.config.js
 
-# Change ownership to nextjs user
-RUN chown -R nextjs:nodejs /app
-
-# Change ownership to nextjs user
-RUN chown -R nextjs:nodejs /app
-
-# Switch to non-root user
-USER nextjs
-
 # Expose port
 EXPOSE 3000
 
