@@ -13,14 +13,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Log in to Docker Hub
-      run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
-
     - name: Build Docker image
       run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/nextjs-app:${{ github.sha }} .
 
-    - name: Push image to Docker Hub
-      run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/nextjs-app:${{ github.sha }}
+    - name: Log in and Push image to Docker Hub
+      run: |
+        echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+        docker push ${{ secrets.DOCKER_HUB_USERNAME }}/nextjs-app:${{ github.sha }}
 
     - name: Deploy to Azure VM with rollback
       uses: appleboy/ssh-action@v1.2.0
@@ -30,6 +29,10 @@ jobs:
         key: ${{ secrets.AZURE_VM_SSH_KEY }}
         script: |
           set -e
+          
+          # --- FIX: Log in to Docker Hub on the VM itself ---
+          echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+
           IMAGE=${{ secrets.DOCKER_HUB_USERNAME }}/nextjs-app:${{ github.sha }}
           STABLE=${{ secrets.DOCKER_HUB_USERNAME }}/nextjs-app:stable
 
