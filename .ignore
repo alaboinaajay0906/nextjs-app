@@ -1,5 +1,12 @@
 node_modules
 npm-debug.log
 .dockerignore
+
+
+# Git files
 .git
-.github
+.gitignore
+
+# Ignore logs and temp files
+*.log
+*.tmp
