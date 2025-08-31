@@ -1,12 +1,33 @@
-node_modules
-npm-debug.log
-.dockerignore
+# Node dependencies
+node_modules/
 
+# Next.js build output
+.next/
+out/
+dist/
 
-# Git files
-.git
-.gitignore
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Ignore logs and temp files
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/editor settings
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Misc
 *.log
-*.tmp
+coverage/
