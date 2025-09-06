@@ -1,4 +1,4 @@
-name: Deploy Next.js to Azure VM with Rollback
+name: Deploy Next.js to Azure App Service
 
 on:
   push:
@@ -6,58 +6,31 @@ on:
       - main
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Build Docker image
-      run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/nextjs-app:${{ github.sha }} .
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
 
-    - name: Log in and Push image to Docker Hub
-      run: |
-        echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
-        docker push ${{ secrets.DOCKER_HUB_USERNAME }}/nextjs-app:${{ github.sha }}
+      - name: Install dependencies
+        run: npm install
 
-    - name: Deploy to Azure VM with rollback
-      uses: appleboy/ssh-action@v1.2.0
-      with:
-        host: ${{ secrets.AZURE_VM_IP }}
-        username: ${{ secrets.AZURE_VM_USER }}
-        key: ${{ secrets.AZURE_VM_SSH_KEY }}
-        script: |
-          set -e
-          
-          # --- FIX: Log in to Docker Hub on the VM itself ---
-          echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+      - name: Build Next.js app
+        run: npm run build
 
-          IMAGE=${{ secrets.DOCKER_HUB_USERNAME }}/nextjs-app:${{ github.sha }}
-          STABLE=${{ secrets.DOCKER_HUB_USERNAME }}/nextjs-app:stable
+      # Optional: only if your app is static export
+      # - name: Export Next.js app
+      #   run: npm run export
 
-          echo "Pulling new image: $IMAGE"
-          docker pull $IMAGE
-
-          echo "Stopping old container (if any)..."
-          docker stop nextjs-app || true
-          docker rm nextjs-app || true
-
-          echo "Starting new container..."
-          docker run -d -p 80:3000 --name nextjs-app $IMAGE
-
-          echo "Waiting 15s for container to boot..."
-          sleep 15
-          
-          echo "Checking if container is healthy..."
-          if curl -f http://localhost:80 > /dev/null 2>&1; then
-            echo " New container is healthy. Updating stable tag."
-            docker tag $IMAGE $STABLE
-            docker push $STABLE
-          else
-            echo " New container failed. Rolling back to stable."
-            docker stop nextjs-app || true
-            docker rm nextjs-app || true
-            docker pull $STABLE
-            docker run -d -p 80:3000 --name nextjs-app $STABLE
-          fi
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}    # Your Web App name
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }} # From Azure Portal
+          package: .
